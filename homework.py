@@ -1,3 +1,5 @@
+import typing as t
+
 def main():
 
     phone_book = {}
@@ -15,38 +17,41 @@ def main():
             except (UnboundLocalError, KeyError):
                 print('Error!')
 
-    def hello(_):
+    def hello():
         return 'How can I help you?'
 
     def add(name, phone):
         if name in phone_book:
-            return 'This contact is already exist!'
+            return f'The contact with name {name} is already exist!'
         else:
             phone_book[name] = phone
-            return 'The contact was successfully added.'
+            return f'The contact with name {name} and phone number {phone} was successfully added'
     
     def change(name, phone):
         if name not in phone_book:
-            return 'This contact does not exist!'
+            return f'The contact with name {name} does not exist!'
         else:
             phone_book[name] = phone
-            return 'The user`s phone was successfully changed.'
+            return f'{name}\'s contact phone number was successfully changed to {phone}'
         
     def phone(name):
         if name in phone_book:
             return phone_book[name]
         else:
-            return 'This contact does not exist!'
+            return f'The contact with name {name} does not exist!'
     
-    def show_all(string):
+    def show_all():
         return phone_book
 
-    def close(_):
+    def close():
         return 'break'
+    
+    def unknown_command(command):
+        return f'Command {command} does not exist!'
 
     @input_error
-    def handler():
-        COMMANDS = {
+    def main_handler():
+        COMMANDS: dict[str, t.Callable] = {
             'hello': hello,
             'add': add,
             'change': change,
@@ -58,24 +63,19 @@ def main():
         }
         
         while True:
-            user_input = str(input('Write command: ')).lower()
-            command_list = user_input.split(' ')
-            for command in COMMANDS:
-                if len(command_list) == 1:
-                    if command_list[0] in command:
-                        result = COMMANDS[command_list[0]](command_list[0])
-                        break
-                elif len(command_list) == 2:
-                    if f'{command_list[0]} {command_list[1]}' in command:
-                        result = COMMANDS[f'{command_list[0]} {command_list[1]}'](command_list[1])
-                        break
-                    elif command_list[0] in command:
-                        result = COMMANDS[command_list[0]](command_list[1])
-                        break
-                elif len(command_list) == 3:
-                    if command_list[0] in command:
-                        result = COMMANDS[command_list[0]](command_list[1], command_list[2])
-                        break
+            command, *data = input('Write command: ').lower().strip().split(' ', 1)
+            if data:
+                data = data[0].split(',')
+
+            if (handler := COMMANDS.get(command)) is not None:
+                result = handler(*data)
+
+            elif len(data) == 1 and (handler := COMMANDS.get(f'{command} {data[0]}')) is not None:
+                result = handler()
+
+            else:
+                result = unknown_command(command)
+
             if result == 'break':
                 return 'break'
             else:
